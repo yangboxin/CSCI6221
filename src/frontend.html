@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Encryption</title>
+    <style type="text/css">
+        body {
+        font-family: 'Roboto Mono', monospace, sans-serif;
+        background: linear-gradient(135deg, #000000, #0b0b0b, #000000);
+        background-size: 400% 400%;
+        color: #00ff00;
+        margin: 0;
+        padding: 30px;
+        overflow-y: auto;
+        position: relative;
+        min-height: 100vh;
+        animation: bgAnimation 10s ease infinite;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        }
+        @keyframes bgAnimation {
+        0% {
+        background-position: 0% 50%;
+        }
+        50% {
+        background-position: 100% 50%;
+        }
+        100% {
+        background-position: 0% 50%;
+        }
+        }
+        #my_canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        }
+        
+        .content {
+        position: relative;
+        z-index: 1;
+        padding: 30px;
+        background-image: url.("#");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        }
+        
+        .content h1 {
+        font-weight: bold;
+        font-size: 3em;
+        color: #0f0;
+        text-shadow: 0 0 15px #0f0;
+        margin-bottom: 30px;
+        justify-content: center;
+        }
+        p {
+        margin: 25px 0;
+        border: 1px solid #00ff00;
+        border-radius: 15px;
+        padding: 25px;
+        background-color: #202020;
+        box-shadow: 0 0 20px 5px #003300 inset;
+        transition: all 0.4s ease;
+        max-width: 800px;
+        width: 100%;
+        }
+        p:hover {
+        background-color: #303030;
+        }
+        .content h2 {
+        color: #0f0;
+        margin-bottom: 20px;
+        text-shadow: 0 0 10px #0f0;
+        }
+        input[type="file"], button {
+        background-color: #303030;
+        color: #00ff00;
+        padding: 12px 18px;
+        margin-top: 10px;
+        border: 1px solid #00ff00;
+        border-radius: 8px;
+        box-shadow: 0 0 15px #006600;
+        transition: all 0.4s ease, box-shadow 0.6s ease-in-out;
+        position: relative;
+        overflow: hidden;
+        }
+        input[type="file"]:hover, button:hover {
+        background-color: #205520;
+        box-shadow: 0 0 20px #00bb00, 0 0 40px #00ff00, 0 0 80px #00ff00;
+        }
+        input[type="file"]::before, button::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 0;
+        height: 0;
+        background: rgba(0, 255, 0, 0.5);
+        border-radius: 50%;
+        transition: width 0.6s, height 0.6s;
+        }
+        input[type="file"]:hover::before, button:hover::before {
+        width: 300%;
+        height: 300%;
+        }
+        #outputEncrypt, #outputDecrypt {
+        background-color: #303030;
+        border: 1px solid #00ff00;
+        padding: 15px;
+        margin-top: 15px;
+        min-height: 60px;
+        color: #00ff00;
+        font-family: 'Roboto Mono', monospace;
+        box-shadow: 0 0 15px #004400 inset;
+        transition: box-shadow 0.4s ease-in-out;
+        max-width: 800px;
+        width: 100%;
+        }
+        #outputEncrypt:hover, #outputDecrypt:hover {
+        box-shadow: 0 0 20px #00bb00 inset;
+        }
+        </style>
+</head>
+<body>
+    <canvas id="my_canvas"></canvas>
+    <h1>File Encryption: Post-Quantum Lattice Encryption Method</h1>
+    <p>In the realm of cybersecurity, the project employs advanced post-quantum lattice encryption techniques to safeguard sensitive data against the looming threat of quantum computing. Leveraging the robustness of lattice-based cryptography, this initiative ensures data confidentiality and integrity in an era where conventional encryption methods may be rendered vulnerable by quantum adversaries. By harnessing the power of lattice structures, the project fortifies encryption protocols, offering a resilient defense mechanism against emerging quantum computing technologies. As quantum computing continues to evolve, the adoption of post-quantum encryption becomes imperative to uphold data security standards and safeguard digital ecosystems against potential breaches.</p>
+    <h2>Encryption</h2>
+    <form id="latticeEncryptForm" target="/" method="post" enctype="multipart/form-data">
+        <input type="file" name="fileInputEncrypt" id="fileInputEncrypt" accept=".csv">
+        <button type="submit" id="encryptButton">Encrypt</button>
+    </form>
+    <div id="outputEncrypt"></div>
+
+    <h2>Decryption (Requires Encrypted Matrix, Secret Key and Public Key) </h2>
+    <form id="latticeDecryptForm" target="/" method="post" enctype="multipart/form-data">
+        <label for="fileInputDecryptMatrix"> Upload encrypted matrix file (Must be .csv):</label>
+        <input type="file" name="fileInputDecryptMatrix" id="fileInputDecryptMatrix" accept=".txt">
+        <br>
+
+        <label for="fileInputDecryptSecretKey"> Upload secret key file (Must be .key):</label>
+        <input type="file" name="fileInputDecryptSecretKey" id="fileInputDecryptSecretKey" accept=".key">
+        <br>
+
+        <label for="fileInputDecryptPublicKey"> Upload public key file (Must be .key):</label>
+        <input type="file" name="fileInputDecryptPublicKey" id="fileInputDecryptPublicKey" accept=".key">
+        <br>
+        <button id="decryptButton">Decrypt</button>
+    </form>
+    <div id="outputDecrypt"></div>
+
+    <script>
+
+        const outputDivEncrypt = document.getElementById('outputEncrypt');
+        const latticeEncryptForm = document.getElementById('latticeEncryptForm');
+
+        const outputDivDecrypt = document.getElementById('outputDecrypt');
+        const latticeDecryptForm = document.getElementById('latticeDecryptForm');
+
+        latticeDecryptForm.addEventListener('submit', async (listen) => {
+
+            // This prevents the default page from being generated
+            listen.preventDefault();
+
+            const latticeDecryptFormData = new FormData(listen.target);
+            const response = await fetch('/decrypt', {
+                method: 'POST',
+                body: latticeDecryptFormData
+            });
+
+            if (!response.ok) {
+                outputDivDecrypt.textContent = 'Error during decryption.';
+                return;
+            }
+
+            const decryptedContent = await response.text();
+            outputDivDecrypt.textContent = decryptedContent;
+
+            // This creates the download links of the files that are generated from the encrypt
+            createDecryptOutputDownloadLinks();
+        });
+        
+        latticeEncryptForm.addEventListener('submit', async (listen) => {
+
+            // This prevents the default page from being generated
+            listen.preventDefault();
+
+            const latticeEncryptFormData = new FormData(listen.target);
+            const response = await fetch('/encrypt', {
+                method: 'POST',
+                body: latticeEncryptFormData
+            });
+
+            if (!response.ok) {
+                outputDivEncrypt.textContent = 'Error during encryption.';
+                return;
+            }
+
+            const encryptedContent = await response.text();
+            outputDivEncrypt.textContent = encryptedContent;
+
+            // This creates the download links of the files that are generated from the encrypt
+            createEncryptOutputDownloadLinks();
+        });
+
+        function createEncryptOutputDownloadLinks() {
+            const linksDiv = document.createElement('div');
+            linksDiv.innerHTML = `
+                <h3>Download encrypted files:</h3>
+                <a href="http://localhost:8080/encrypted/encrypted_matrix.csv" download>Download Encrypted Matrix</a><br>
+                <a href="http://localhost:8080/encrypted/secret_key.key" download>Download Secret Key</a><br>
+                <a href="http://localhost:8080/encrypted/public_key.key" download>Download Public Key</a><br>
+            `;
+            outputDivEncrypt.appendChild(linksDiv);
+        }
+
+        function createDecryptOutputDownloadLinks() {
+            const linksDiv = document.createElement('div');
+            linksDiv.innerHTML = `
+                <h3>Download Decrypted files:</h3>
+                <a href="http://localhost:8080/decrypted/output.csv" download>Download Decrypted CSV</a><br>
+            `;
+            outputDivEncrypt.appendChild(linksDiv);
+        }
+    </script>
+     <script>
+        var c = document.getElementById("my_canvas");
+        var ctx = c.getContext("2d");
+        
+        c.height = window.innerHeight;
+        c.width = window.innerWidth;
+        
+        var txts = "01";
+        txts = txts.split("");
+        
+        var font_size = 16;
+        var columns = c.width/font_size;
+        var drops = [];
+        for(var x = 0; x < columns; x++) {
+        drops[x] = 1;
+        }
+        function draw()
+        {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+        ctx.fillRect(0, 0, c.width, c.height);
+        
+        ctx.fillStyle = "#FFF";
+        ctx.font = font_size + "px arial";
+        for(var i = 0; i < drops.length; i++)
+        {
+        var text = txts[Math.floor(Math.random()*txts.length)];
+        ctx.fillText(text, i*font_size, drops[i]*font_size);
+        if(drops[i]*font_size > c.height || Math.random() > 0.95)
+        drops[i] = 0;
+        drops[i]++;
+        }
+        }
+        setInterval(draw, 33);
+        </script>
+</body>
+</html>
